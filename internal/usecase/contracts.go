@@ -1,4 +1,4 @@
-package repo
+package usecase
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 )
 
 type (
-	CategoryRepository interface {
+	CategoryUsecase interface {
 		Create(context.Context, entity.Category) (int64, error)
 		GetAll(context.Context) ([]entity.Category, error)
 		Update(ctx context.Context, id int64) error
 		Delete(ctx context.Context, id int64) error
 	}
 
-	TopicRepository interface {
+	TopicUsecase interface {
 		Create(context.Context, entity.Topic) (int64, error)
 		GetByID(context.Context, int64) (*entity.Topic, error)
 		GetByCategory(ct context.Context, categoryID int64) ([]entity.Topic, error)
@@ -22,7 +22,7 @@ type (
 		Delete(ctx context.Context, id int64) error
 	}
 
-	PostRepository interface {
+	PostUsecase interface {
 		Create(context.Context, entity.Post) (int64, error)
 		GetByID(context.Context, int64) (*entity.Post, error)
 		GetByTopic(ctx context.Context, topicID int64) ([]entity.Post, error)

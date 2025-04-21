@@ -1,0 +1,8 @@
+CREATE TABLE topics IF NOT EXISTS (
+    id SERIAL PRIMARY KEY,
+    category_id INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    author_id INT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

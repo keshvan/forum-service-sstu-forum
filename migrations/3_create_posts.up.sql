@@ -1,0 +1,9 @@
+CREATE TABLE posts IF NOT EXISTS (
+    id SERIAL PRIMARY KEY,
+    topic_id INT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+    author_id INT REFERENCES users(id) ON DELETE SET NULL,
+    content TEXT NOT NULL,
+    reply_to INT REFERENCES posts(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
