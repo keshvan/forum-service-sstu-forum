@@ -32,12 +32,16 @@ func (u *categoryUsecase) GetAll(ctx context.Context) ([]entity.Category, error)
 	return categories, nil
 }
 
-// TODO
-func (u *categoryUsecase) Update(ctx context.Context, id int64) error {
+func (u *categoryUsecase) Update(ctx context.Context, id int64, title, description string) error {
+	if err := u.repo.Update(ctx, id, title, description); err != nil {
+		return fmt.Errorf("ForumService - CategoryUsecase - Update - repo.Update(): %w", err)
+	}
 	return nil
 }
 
-// TODO
 func (u *categoryUsecase) Delete(ctx context.Context, id int64) error {
+	if err := u.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("ForumService - PostUsecase - Delete - repo.Delete(): %w", err)
+	}
 	return nil
 }

@@ -3,6 +3,6 @@ CREATE TABLE topics IF NOT EXISTS (
     category_id INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     author_id INT REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

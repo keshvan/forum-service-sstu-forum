@@ -4,6 +4,6 @@ CREATE TABLE posts IF NOT EXISTS (
     author_id INT REFERENCES users(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     reply_to INT REFERENCES posts(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );

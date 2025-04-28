@@ -21,7 +21,7 @@ func (r *topicRepository) Create(ctx context.Context, topic entity.Topic) (int64
 
 	var id int64
 	if err := row.Scan(&id); err != nil {
-		return 0, fmt.Errorf("ForumRepository -  CreateTopic - row.Scan(): %w", err)
+		return 0, fmt.Errorf("TopicRepository -  CreateTopic - row.Scan(): %w", err)
 	}
 
 	return id, nil
@@ -32,7 +32,7 @@ func (r *topicRepository) GetByID(ctx context.Context, id int64) (*entity.Topic,
 
 	var t entity.Topic
 	if err := row.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt); err != nil {
-		return nil, fmt.Errorf("ForumRepository - GetTopicByID - row.Scan(): %w", err)
+		return nil, fmt.Errorf("TopicRepository - GetTopicByID - row.Scan(): %w", err)
 	}
 
 	return &t, nil
@@ -41,7 +41,7 @@ func (r *topicRepository) GetByID(ctx context.Context, id int64) (*entity.Topic,
 func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) ([]entity.Topic, error) {
 	rows, err := r.pg.Pool.Query(ctx, "id, category_id, title, author_id, created_at, updated_at FROM topics WHERE category_id = $1", categoryID)
 	if err != nil {
-		return nil, fmt.Errorf("ForumRepository -  GetTopics - pg.Pool.Query: %w", err)
+		return nil, fmt.Errorf("TopicRepository -  GetTopics - pg.Pool.Query: %w", err)
 	}
 
 	var topics []entity.Topic
@@ -49,7 +49,7 @@ func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) (
 	for rows.Next() {
 		err := rows.Scan(&t.ID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
-			return nil, fmt.Errorf("ForumRepository - GetTopics - rows.Next() - rows.Scan(): %w", err)
+			return nil, fmt.Errorf("TopicRepository - GetTopics - rows.Next() - rows.Scan(): %w", err)
 		}
 		topics = append(topics, t)
 	}
@@ -57,12 +57,19 @@ func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) (
 	return topics, nil
 }
 
-// TODO
-func (r *topicRepository) Update(ctx context.Context, id int64) error {
+func (r *topicRepository) Update(ctx context.Context, id int64, title string) error {
+	_, err := r.pg.Pool.Exec(ctx, "UPDATE topics SET title = $1, updated_at = now() WHERE id = $2", title, id)
+
+	if err != nil {
+		return fmt.Errorf("TopicRepostiroy - Update - Exec: %w", err)
+	}
+
 	return nil
 }
 
-// TODO
 func (r *topicRepository) Delete(ctx context.Context, id int64) error {
+	if _, err := r.pg.Pool.Exec(ctx, `DELETE FROM topics WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("TopicRepository - Delete - pg.Pool.Exec(): %w", err)
+	}
 	return nil
 }

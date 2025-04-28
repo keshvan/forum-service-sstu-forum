@@ -57,12 +57,19 @@ func (r *postRepository) GetByTopic(ctx context.Context, topicID int64) ([]entit
 	return posts, nil
 }
 
-// TODO
-func (r *postRepository) Update(ctx context.Context, id int64) error {
+func (r *postRepository) Update(ctx context.Context, id int64, content string) error {
+	_, err := r.pg.Pool.Exec(ctx, "UPDATE posts SET content = $1, updated_at = now() WHERE id = $2", content, id)
+
+	if err != nil {
+		return fmt.Errorf("PostRepository - Update - Exec: %w", err)
+	}
+
 	return nil
 }
 
-// TODO
 func (r *postRepository) Delete(ctx context.Context, id int64) error {
+	if _, err := r.pg.Pool.Exec(ctx, `DELETE FROM posts WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("PostRepository - Delete - pg.Pool.Exec(): %w", err)
+	}
 	return nil
 }

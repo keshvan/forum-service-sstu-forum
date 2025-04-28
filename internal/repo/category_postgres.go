@@ -21,16 +21,27 @@ func (r *categoryRepository) Create(ctx context.Context, category entity.Categor
 
 	var id int64
 	if err := row.Scan(&id); err != nil {
-		return 0, fmt.Errorf("ForumRepository -  CreateCategory - row.Scan(): %w", err)
+		return 0, fmt.Errorf("CategoryRepository -  CreateCategory - row.Scan(): %w", err)
 	}
 
 	return id, nil
 }
 
+func (r *categoryRepository) GetByID(ctx context.Context, id int64) (*entity.Category, error) {
+	row := r.pg.Pool.QueryRow(ctx, "SELECT id, content, author_id, reply_to, created_at, updated_at FROM posts WHERE id = $1", id)
+
+	var c entity.Category
+	if err := row.Scan(&c.ID, &c.Title, &c.Description, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		return nil, fmt.Errorf("PostRepository - GetByID - row.Scan(): %w", err)
+	}
+
+	return &c, nil
+}
+
 func (r *categoryRepository) GetAll(ctx context.Context) ([]entity.Category, error) {
 	rows, err := r.pg.Pool.Query(ctx, "SELECT id, title, description, created_at, updated_at FROM categories")
 	if err != nil {
-		return nil, fmt.Errorf("ForumRepository -  GetCategories - pg.Pool.Query: %w", err)
+		return nil, fmt.Errorf("CategoryRepository -  GetCategories - pg.Pool.Query: %w", err)
 	}
 
 	var categories []entity.Category
@@ -38,7 +49,7 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]entity.Category, err
 	for rows.Next() {
 		err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
-			return nil, fmt.Errorf("ForumRepository - GetCategories - rows.Next() - rows.Scan(): %w", err)
+			return nil, fmt.Errorf("CategoryRepository - GetCategories - rows.Next() - rows.Scan(): %w", err)
 		}
 		categories = append(categories, c)
 	}
@@ -46,12 +57,26 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]entity.Category, err
 	return categories, nil
 }
 
-// TODO
-func (r *categoryRepository) Update(ctx context.Context, id int64) error {
+func (r *categoryRepository) Update(ctx context.Context, id int64, title, description string) error {
+	_, err := r.pg.Pool.Exec(ctx, `
+	UPDATE categories
+	SET
+		title = COALESCE($1, title),
+		description = COALESCE($2, description),
+		updated_at = now()
+	WHERE id = $3
+	`, title, description, id)
+
+	if err != nil {
+		return fmt.Errorf("CategoryRepository - Update - Exec: %w", err)
+	}
+
 	return nil
 }
 
-// TODO
 func (r *categoryRepository) Delete(ctx context.Context, id int64) error {
+	if _, err := r.pg.Pool.Exec(ctx, `DELETE FROM categories WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("CategoryRepository - Delete - pg.Pool.Exec(): %w", err)
+	}
 	return nil
 }
