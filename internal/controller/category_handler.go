@@ -36,7 +36,7 @@ func (h *CategoryHandler) GetAll(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"posts": posts})
+	c.JSON(http.StatusOK, gin.H{"categories": posts})
 }
 
 func (h *CategoryHandler) Delete(c *gin.Context) {

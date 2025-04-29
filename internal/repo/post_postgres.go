@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/keshvan/forum-service-sstu-forum/internal/entity"
 	"github.com/keshvan/go-common-forum/postgres"
 )
@@ -17,7 +18,12 @@ func NewPostRepository(pg *postgres.Postgres) *postRepository {
 }
 
 func (r *postRepository) Create(ctx context.Context, post entity.Post) (int64, error) {
-	row := r.pg.Pool.QueryRow(ctx, "INSERT INTO posts (topic_id, author_id, content, reply_to) VALUES($1, $2, $3, $4) RETURNING id", post.TopicID, post.Content, post.AuthorID, post.ReplyTo)
+	var row pgx.Row
+	if post.ReplyTo.Valid {
+		row = r.pg.Pool.QueryRow(ctx, "INSERT INTO posts (topic_id, author_id, content, reply_to) VALUES($1, $2, $3, $4) RETURNING id", post.TopicID, post.AuthorID, post.Content, post.ReplyTo.Int64)
+	} else {
+		row = r.pg.Pool.QueryRow(ctx, "INSERT INTO posts (topic_id, author_id, content, reply_to) VALUES($1, $2, $3, $4) RETURNING id", post.TopicID, post.AuthorID, post.Content, nil)
+	}
 
 	var id int64
 	if err := row.Scan(&id); err != nil {

@@ -28,7 +28,7 @@ func (r *categoryRepository) Create(ctx context.Context, category entity.Categor
 }
 
 func (r *categoryRepository) GetByID(ctx context.Context, id int64) (*entity.Category, error) {
-	row := r.pg.Pool.QueryRow(ctx, "SELECT id, content, author_id, reply_to, created_at, updated_at FROM posts WHERE id = $1", id)
+	row := r.pg.Pool.QueryRow(ctx, "SELECT id, title, description, created_at, updated_at FROM categories WHERE id = $1", id)
 
 	var c entity.Category
 	if err := row.Scan(&c.ID, &c.Title, &c.Description, &c.CreatedAt, &c.UpdatedAt); err != nil {

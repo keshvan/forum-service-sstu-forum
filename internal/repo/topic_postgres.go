@@ -39,7 +39,7 @@ func (r *topicRepository) GetByID(ctx context.Context, id int64) (*entity.Topic,
 }
 
 func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) ([]entity.Topic, error) {
-	rows, err := r.pg.Pool.Query(ctx, "id, category_id, title, author_id, created_at, updated_at FROM topics WHERE category_id = $1", categoryID)
+	rows, err := r.pg.Pool.Query(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE category_id = $1", categoryID)
 	if err != nil {
 		return nil, fmt.Errorf("TopicRepository -  GetTopics - pg.Pool.Query: %w", err)
 	}
@@ -47,7 +47,7 @@ func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) (
 	var topics []entity.Topic
 	var t entity.Topic
 	for rows.Next() {
-		err := rows.Scan(&t.ID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt)
+		err := rows.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("TopicRepository - GetTopics - rows.Next() - rows.Scan(): %w", err)
 		}

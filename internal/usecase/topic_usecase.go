@@ -97,6 +97,7 @@ func (u *topicUsecase) checkAccess(ctx context.Context, topicID int64, userID in
 }
 
 func (u *topicUsecase) checkCategory(ctx context.Context, categoryID int64) error {
+	fmt.Println("checkCategory", categoryID)
 	if _, err := u.categoryRepo.GetByID(ctx, categoryID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("ForumService - TopicUsecase - checkCategory - categoryRepo.GetByID(): %w", ErrCategoryNotFound)

@@ -83,7 +83,7 @@ func (h *PostHandler) Update(c *gin.Context) {
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	postID, err := strconv.ParseInt(c.Param("post_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid post id"})
 		return
@@ -121,7 +121,7 @@ func (h *PostHandler) Delete(c *gin.Context) {
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	postID, err := strconv.ParseInt(c.Param("post_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid post id"})
 		return

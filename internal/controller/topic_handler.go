@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,7 +24,7 @@ func (h *TopicHandler) Create(c *gin.Context) {
 		return
 	}
 
-	categoryID, err := strconv.ParseInt(c.Param("category_id"), 10, 64)
+	categoryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
 		return
@@ -53,7 +54,7 @@ func (h *TopicHandler) Create(c *gin.Context) {
 }
 
 func (h *TopicHandler) GetByCategory(c *gin.Context) {
-	categoryID, err := strconv.ParseInt(c.Param("category_id"), 10, 64)
+	categoryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
 		return
@@ -81,7 +82,7 @@ func (h *TopicHandler) Update(c *gin.Context) {
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	topicID, err := strconv.ParseInt(c.Param("topic_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid topic id"})
 		return
@@ -113,13 +114,14 @@ func (h *TopicHandler) Update(c *gin.Context) {
 
 func (h *TopicHandler) Delete(c *gin.Context) {
 	userID, exists := middleware.GetUserIDFromContext(c)
+	fmt.Println(userID)
 	if !exists {
 		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		return
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	topicID, err := strconv.ParseInt(c.Param("topic_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid topic id"})
 		return
