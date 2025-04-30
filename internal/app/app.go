@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/keshvan/forum-service-sstu-forum/config"
+	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/controller"
 	"github.com/keshvan/forum-service-sstu-forum/internal/repo"
 	"github.com/keshvan/forum-service-sstu-forum/internal/usecase"
@@ -28,10 +29,17 @@ func Run(cfg *config.Config) {
 	topicRepo := repo.NewTopicRepository(pg)
 	postRepo := repo.NewPostRepository(pg)
 
+	//CLient
+	userClient, err := client.New(cfg.GrpcAddress)
+	if err != nil {
+		log.Fatalf("app - Run - client.New: %v", err)
+	}
+	defer userClient.Close()
+
 	//Usecase
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
-	topicUsecase := usecase.NewTopicUsecase(topicRepo, categoryRepo)
-	postUsecase := usecase.NewPostUsecase(postRepo, topicRepo)
+	topicUsecase := usecase.NewTopicUsecase(topicRepo, categoryRepo, userClient)
+	postUsecase := usecase.NewPostUsecase(postRepo, topicRepo, userClient)
 
 	//JWT
 	jwt := jwt.New(cfg.Secret, cfg.AccessTTL, cfg.RefreshTTL)

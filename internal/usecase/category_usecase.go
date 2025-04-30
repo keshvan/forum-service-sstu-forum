@@ -12,7 +12,7 @@ type categoryUsecase struct {
 	repo repo.CategoryRepository
 }
 
-func NewCategoryUsecase(repo repo.CategoryRepository) *categoryUsecase {
+func NewCategoryUsecase(repo repo.CategoryRepository) CategoryUsecase {
 	return &categoryUsecase{repo}
 }
 

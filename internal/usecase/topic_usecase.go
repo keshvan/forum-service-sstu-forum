@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/entity"
 	"github.com/keshvan/forum-service-sstu-forum/internal/repo"
 )
@@ -13,10 +14,11 @@ import (
 type topicUsecase struct {
 	topicRepo    repo.TopicRepository
 	categoryRepo repo.CategoryRepository
+	userClient   *client.UserClient
 }
 
-func NewTopicUsecase(topicRepo repo.TopicRepository, categoryRepo repo.CategoryRepository) *topicUsecase {
-	return &topicUsecase{topicRepo: topicRepo, categoryRepo: categoryRepo}
+func NewTopicUsecase(topicRepo repo.TopicRepository, categoryRepo repo.CategoryRepository, userClient *client.UserClient) TopicUsecase {
+	return &topicUsecase{topicRepo: topicRepo, categoryRepo: categoryRepo, userClient: userClient}
 }
 
 func (u *topicUsecase) Create(ctx context.Context, topic entity.Topic) (int64, error) {
@@ -50,7 +52,36 @@ func (u *topicUsecase) GetByCategory(ctx context.Context, categoryID int64) ([]e
 
 	topics, err := u.topicRepo.GetByCategory(ctx, categoryID)
 	if err != nil {
-		return nil, fmt.Errorf("ForumService - TopicUsecase  - GetByCategory - topicRepo.GetByTopic(): %w", err)
+		return nil, fmt.Errorf("ForumService - TopicUsecase  - GetByCategory - topicRepo.GetByCategory(): %w", err)
+	}
+
+	authorIDs := make([]int64, len(topics))
+	authorIDSet := make(map[int64]bool)
+	for i := range topics {
+		if topics[i].AuthorID != nil {
+			if _, exists := authorIDSet[*topics[i].AuthorID]; !exists {
+				authorIDs = append(authorIDs, *topics[i].AuthorID)
+				authorIDSet[*topics[i].AuthorID] = true
+			}
+		}
+	}
+
+	usernames, err := u.userClient.GetUsernames(ctx, authorIDs)
+	if err != nil {
+		return nil, fmt.Errorf("ForumService - TopicUsecase  - GetByCategory - userClient.GetUsernames(): %w", err)
+	}
+
+	for i := range topics {
+		if topics[i].AuthorID == nil {
+			topics[i].Username = "Удаленный пользователь"
+			continue
+		}
+
+		if username, exists := usernames[*topics[i].AuthorID]; exists {
+			topics[i].Username = username
+		} else {
+			topics[i].Username = "Удаленный пользователь"
+		}
 	}
 
 	return topics, nil
@@ -89,7 +120,7 @@ func (u *topicUsecase) checkAccess(ctx context.Context, topicID int64, userID in
 		return fmt.Errorf("ForumService - TopicUsecase - checkAccess  - topicRepo.GetByID(): %w", err)
 	}
 
-	if post.AuthorID != userID && role != "admin" {
+	if post.AuthorID == nil || (*post.AuthorID != userID || role != "admin") {
 		return fmt.Errorf("ForumService - TopicUsecase - checkAccess  - topicRepo.Update(): %w", ErrForbidden)
 	}
 

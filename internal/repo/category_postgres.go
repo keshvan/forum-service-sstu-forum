@@ -12,7 +12,7 @@ type categoryRepository struct {
 	pg *postgres.Postgres
 }
 
-func NewCategoryRepository(pg *postgres.Postgres) *categoryRepository {
+func NewCategoryRepository(pg *postgres.Postgres) CategoryRepository {
 	return &categoryRepository{pg}
 }
 
@@ -39,10 +39,11 @@ func (r *categoryRepository) GetByID(ctx context.Context, id int64) (*entity.Cat
 }
 
 func (r *categoryRepository) GetAll(ctx context.Context) ([]entity.Category, error) {
-	rows, err := r.pg.Pool.Query(ctx, "SELECT id, title, description, created_at, updated_at FROM categories")
+	rows, err := r.pg.Pool.Query(ctx, "SELECT id, title, description, created_at, updated_at FROM categories ORDER BY id")
 	if err != nil {
 		return nil, fmt.Errorf("CategoryRepository -  GetCategories - pg.Pool.Query: %w", err)
 	}
+	defer rows.Close()
 
 	var categories []entity.Category
 	var c entity.Category

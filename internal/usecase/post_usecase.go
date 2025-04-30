@@ -6,17 +6,19 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/entity"
 	"github.com/keshvan/forum-service-sstu-forum/internal/repo"
 )
 
 type postUsecase struct {
-	postRepo  repo.PostRepository
-	topicRepo repo.TopicRepository
+	postRepo   repo.PostRepository
+	topicRepo  repo.TopicRepository
+	userClient *client.UserClient
 }
 
-func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository) *postUsecase {
-	return &postUsecase{postRepo: postRepo, topicRepo: topicRepo}
+func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository, userClient *client.UserClient) PostUsecase {
+	return &postUsecase{postRepo: postRepo, topicRepo: topicRepo, userClient: userClient}
 }
 
 func (u *postUsecase) Create(ctx context.Context, post entity.Post) (int64, error) {
@@ -48,6 +50,36 @@ func (u *postUsecase) GetByTopic(ctx context.Context, postID int64) ([]entity.Po
 	if err != nil {
 		return nil, fmt.Errorf("ForumService - PostUsecase - GetByTopic - postRepo.GetByTopic(): %w", err)
 	}
+
+	authorIDs := make([]int64, len(posts))
+	authorIDSet := make(map[int64]bool)
+	for i := range posts {
+		if posts[i].AuthorID != nil {
+			if _, exists := authorIDSet[*posts[i].AuthorID]; !exists {
+				authorIDs = append(authorIDs, *posts[i].AuthorID)
+				authorIDSet[*posts[i].AuthorID] = true
+			}
+		}
+	}
+
+	usernames, err := u.userClient.GetUsernames(ctx, authorIDs)
+	if err != nil {
+		return nil, fmt.Errorf("ForumService - TopicUsecase  - GetByCategory - userClient.GetUsernames(): %w", err)
+	}
+
+	for i := range posts {
+		if posts[i].AuthorID == nil {
+			posts[i].Username = "Удаленный пользователь"
+			continue
+		}
+
+		if username, exists := usernames[*posts[i].AuthorID]; exists {
+			posts[i].Username = username
+		} else {
+			posts[i].Username = "Удаленный пользователь"
+		}
+	}
+
 	return posts, nil
 }
 
@@ -93,7 +125,7 @@ func (u *postUsecase) checkAccess(ctx context.Context, postID int64, userID int6
 		return fmt.Errorf("ForumService - PostUsecase - checkAccess  - postRepo.GetByID(): %w", err)
 	}
 
-	if post.AuthorID != userID && role != "admin" {
+	if post.AuthorID == nil || (*post.AuthorID != userID || role != "admin") {
 		return fmt.Errorf("ForumService - PostUsecase - checkAccess  - postRepo.Update(): %w", ErrForbidden)
 	}
 

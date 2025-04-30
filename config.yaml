@@ -4,7 +4,5 @@ access_ttl: 10h
 refresh_ttl: 10h
 log_level: "debug"
 server: "localhost:3000"
-grpc:
-  port: 44044
-  timeout: 10h
+grpc_address: "localhost:44044"
 secret: "minions-gang"

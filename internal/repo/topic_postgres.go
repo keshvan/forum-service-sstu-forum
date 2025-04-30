@@ -12,13 +12,12 @@ type topicRepository struct {
 	pg *postgres.Postgres
 }
 
-func NewTopicRepository(pg *postgres.Postgres) *topicRepository {
+func NewTopicRepository(pg *postgres.Postgres) TopicRepository {
 	return &topicRepository{pg}
 }
 
 func (r *topicRepository) Create(ctx context.Context, topic entity.Topic) (int64, error) {
 	row := r.pg.Pool.QueryRow(ctx, "INSERT INTO topics (category_id, title, author_id) VALUES($1, $2, $3) RETURNING id", topic.CategoryID, topic.Title, topic.AuthorID)
-
 	var id int64
 	if err := row.Scan(&id); err != nil {
 		return 0, fmt.Errorf("TopicRepository -  CreateTopic - row.Scan(): %w", err)
@@ -28,29 +27,32 @@ func (r *topicRepository) Create(ctx context.Context, topic entity.Topic) (int64
 }
 
 func (r *topicRepository) GetByID(ctx context.Context, id int64) (*entity.Topic, error) {
-	row := r.pg.Pool.QueryRow(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE id = $1", id)
+	row := r.pg.Pool.QueryRow(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE id = $1 ORDER BY created_at", id)
 
 	var t entity.Topic
-	if err := row.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt); err != nil {
+	if err := row.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorIDValid, &t.CreatedAt, &t.UpdatedAt); err != nil {
 		return nil, fmt.Errorf("TopicRepository - GetTopicByID - row.Scan(): %w", err)
 	}
 
+	prepareTopic(&t)
 	return &t, nil
 }
 
 func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) ([]entity.Topic, error) {
-	rows, err := r.pg.Pool.Query(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE category_id = $1", categoryID)
+	rows, err := r.pg.Pool.Query(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE category_id = $1 ORDER BY created_at", categoryID)
 	if err != nil {
 		return nil, fmt.Errorf("TopicRepository -  GetTopics - pg.Pool.Query: %w", err)
 	}
+	defer rows.Close()
 
 	var topics []entity.Topic
 	var t entity.Topic
 	for rows.Next() {
-		err := rows.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt)
+		err := rows.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorIDValid, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("TopicRepository - GetTopics - rows.Next() - rows.Scan(): %w", err)
 		}
+		prepareTopic(&t)
 		topics = append(topics, t)
 	}
 
@@ -72,4 +74,12 @@ func (r *topicRepository) Delete(ctx context.Context, id int64) error {
 		return fmt.Errorf("TopicRepository - Delete - pg.Pool.Exec(): %w", err)
 	}
 	return nil
+}
+
+func prepareTopic(topic *entity.Topic) {
+	if topic.AuthorIDValid.Valid {
+		topic.AuthorID = &topic.AuthorIDValid.Int64
+		return
+	}
+	topic.AuthorID = nil
 }

@@ -36,7 +36,7 @@ func (h *TopicHandler) Create(c *gin.Context) {
 		return
 	}
 
-	topic.AuthorID = userID
+	topic.AuthorID = &userID
 	topic.CategoryID = categoryID
 
 	id, err := h.usecase.Create(c.Request.Context(), topic)

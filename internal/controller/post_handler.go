@@ -36,7 +36,7 @@ func (h *PostHandler) Create(c *gin.Context) {
 	}
 
 	post.TopicID = topicID
-	post.AuthorID = userID
+	post.AuthorID = &userID
 
 	id, err := h.usecase.Create(c.Request.Context(), post)
 	if err != nil {

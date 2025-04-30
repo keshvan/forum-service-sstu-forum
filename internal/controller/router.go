@@ -41,29 +41,4 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 			topicsID.PATCH("/posts/:post_id", auth.Auth(), postHandler.Update)
 		}
 	}
-
-	//Topics
-	//engine.GET("/categories/:category_id/topics", topicHandler.GetByCategory)
-	//engine.POST("/categories/:category_id/topics", auth.Auth(), topicHandler.Create)
-	/*
-		topics := engine.Group("/topics")
-		topics.Use(auth.Auth())
-		{
-			topics.DELETE("/:id", topicHandler.Delete)
-			topics.PATCH("/:id", topicHandler.Update)
-
-			topics.GET("/:id/posts", postHandler.GetByTopic)
-			topics.POST("/:id/posts", auth.Auth(), postHandler.Create)
-		}
-
-		//Posts
-		//engine.GET("/topics/:topic_id/posts", postHandler.GetByTopic)
-		//engine.POST("/topics/:topic_id/posts", auth.Auth(), postHandler.Create)
-
-		posts := engine.Group("/posts")
-		posts.Use(auth.Auth())
-		{
-			posts.DELETE("/:id", postHandler.Delete)
-			posts.PATCH("/:id", postHandler.Update)
-		}*/
 }
