@@ -1,21 +1,34 @@
 package controller
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/keshvan/forum-service-sstu-forum/internal/controller/middleware"
 	"github.com/keshvan/forum-service-sstu-forum/internal/usecase"
 	"github.com/keshvan/go-common-forum/jwt"
+	"github.com/rs/zerolog"
 )
 
-func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT) {
-	categoryHandler := &CategoryHandler{categoryUsecase}
-	topicHandler := &TopicHandler{topicUsecase}
-	postHandler := &PostHandler{postUsecase}
+func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT, log *zerolog.Logger) {
+	categoryHandler := &CategoryHandler{categoryUsecase, log}
+	topicHandler := &TopicHandler{topicUsecase, log}
+	postHandler := &PostHandler{postUsecase, log}
 	auth := middleware.NewAuthMiddleware(jwt)
+
+	engine.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	categories := engine.Group("/categories")
 	{
 		categories.GET("", categoryHandler.GetAll)
+		categories.GET("/:id", categoryHandler.GetByID)
 
 		adminCategories := categories.Group("")
 		adminCategories.Use(auth.Auth(), middleware.RequireAdmin())
@@ -24,21 +37,23 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 			adminCategories.DELETE("/:id", categoryHandler.Delete)
 			adminCategories.PATCH("/:id", categoryHandler.Update)
 		}
+	}
 
-		categoriesID := categories.Group("/:id")
-		{
-			categoriesID.GET("/topics", topicHandler.GetByCategory)
-			categoriesID.POST("/topics", auth.Auth(), topicHandler.Create)
-			categoriesID.DELETE("/topics/:topic_id", auth.Auth(), topicHandler.Delete)
-			categoriesID.PATCH("/topics/:topic_id", auth.Auth(), topicHandler.Update)
-		}
+	engine.GET("/categories/:id/topics", topicHandler.GetByCategory)
+	engine.POST("/categories/:id/topics", auth.Auth(), topicHandler.Create)
 
-		topicsID := categoriesID.Group("/topics/:topic_id")
-		{
-			topicsID.GET("/posts", postHandler.GetByTopic)
-			topicsID.POST("/posts", auth.Auth(), postHandler.Create)
-			topicsID.DELETE("/posts/:post_id", auth.Auth(), postHandler.Delete)
-			topicsID.PATCH("/posts/:post_id", auth.Auth(), postHandler.Update)
-		}
+	topics := engine.Group("/topics").Use(auth.Auth())
+	{
+		topics.DELETE("/:id", topicHandler.Delete)
+		topics.PATCH("/:id", topicHandler.Update)
+	}
+
+	engine.GET("/topics/:id/posts", postHandler.GetByTopic)
+	engine.POST("/topics/:id/posts", auth.Auth(), postHandler.Create)
+
+	posts := engine.Group("/posts").Use(auth.Auth())
+	{
+		posts.DELETE("/:id", postHandler.Delete)
+		posts.PATCH("/:id", postHandler.Delete)
 	}
 }

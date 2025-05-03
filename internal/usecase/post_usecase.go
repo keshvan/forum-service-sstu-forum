@@ -9,45 +9,60 @@ import (
 	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/entity"
 	"github.com/keshvan/forum-service-sstu-forum/internal/repo"
+	"github.com/rs/zerolog"
 )
 
 type postUsecase struct {
 	postRepo   repo.PostRepository
 	topicRepo  repo.TopicRepository
 	userClient *client.UserClient
+	log        *zerolog.Logger
 }
 
-func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository, userClient *client.UserClient) PostUsecase {
-	return &postUsecase{postRepo: postRepo, topicRepo: topicRepo, userClient: userClient}
+const (
+	createPostOp = "PostUsecase.Create"
+	getByTopicOp = "PostUsecase.GetAll"
+	deletePostOp = "PostUsecase.Delete"
+	updatePostOp = "PostUsecase.Update"
+)
+
+func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository, userClient *client.UserClient, log *zerolog.Logger) PostUsecase {
+	return &postUsecase{postRepo: postRepo, topicRepo: topicRepo, userClient: userClient, log: log}
 }
 
 func (u *postUsecase) Create(ctx context.Context, post entity.Post) (int64, error) {
 	if err := u.checkTopic(ctx, post.TopicID); err != nil {
+		u.log.Error().Err(err).Str("op", createPostOp).Int64("topic_id", post.TopicID).Msg("Topic not found")
 		return 0, err
 	}
 
 	id, err := u.postRepo.Create(ctx, post)
 	if err != nil {
+		u.log.Error().Err(err).Str("op", createPostOp).Any("post", post).Msg("Failed to create post in repository")
 		return 0, fmt.Errorf("ForumService - PostUsecase - Create - postRepo.Create(): %w", err)
 	}
 
+	u.log.Info().Str("op", createPostOp).Any("post", post).Msg("Post successfully created")
 	return id, nil
 }
 
-func (u *postUsecase) GetByID(ctx context.Context, id int64) (*entity.Post, error) {
+/*func (u *postUsecase) GetByID(ctx context.Context, id int64) (*entity.Post, error) {
 	post, err := u.postRepo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			u.log.Error().Err(err).Str("op", get).Any("post", post).Msg("Failed to create post in repository")
 			return nil, fmt.Errorf("ForumService - PostUsecase - GetByID - postRepo.GetByID(): %w", ErrPostNotFound)
 		}
 		return nil, fmt.Errorf("ForumService - PostUsecase - GetByID - postRepo.GetByID(): %w", err)
 	}
 	return post, nil
-}
+}*/
 
-func (u *postUsecase) GetByTopic(ctx context.Context, postID int64) ([]entity.Post, error) {
-	posts, err := u.postRepo.GetByTopic(ctx, postID)
+func (u *postUsecase) GetByTopic(ctx context.Context, topicID int64) ([]entity.Post, error) {
+	u.checkTopic(ctx, topicID)
+	posts, err := u.postRepo.GetByTopic(ctx, topicID)
 	if err != nil {
+		u.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Failed to get posts")
 		return nil, fmt.Errorf("ForumService - PostUsecase - GetByTopic - postRepo.GetByTopic(): %w", err)
 	}
 
@@ -80,28 +95,37 @@ func (u *postUsecase) GetByTopic(ctx context.Context, postID int64) ([]entity.Po
 		}
 	}
 
+	u.log.Info().Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Posts by topic succesfully taken")
 	return posts, nil
 }
 
 func (u *postUsecase) Update(ctx context.Context, postID int64, userID int64, role string, content string) error {
 	if err := u.checkAccess(ctx, postID, userID, role); err != nil {
+		u.log.Warn().Err(err).Str("op", updatePostOp).Int64("post_id", postID).Int64("user_id", userID).Msg("Access denied")
 		return err
 	}
 
 	if err := u.postRepo.Update(ctx, postID, content); err != nil {
+		u.log.Error().Err(err).Str("op", updatePostOp).Int64("post_id", postID).Int64("user_id", userID).Msg("Failed to update post in repository")
 		return fmt.Errorf("ForumService - PostUsecase - Update - postRepo.Update(): %w", err)
 	}
+
+	u.log.Info().Str("op", updatePostOp).Int64("post_id", postID).Msg("Post updated successfully")
 	return nil
 }
 
 func (u *postUsecase) Delete(ctx context.Context, postID int64, userID int64, role string) error {
 	if err := u.checkAccess(ctx, postID, userID, role); err != nil {
+		u.log.Warn().Err(err).Str("op", deletePostOp).Int64("post_id", postID).Int64("user_id", userID).Msg("Access denied")
 		return err
 	}
 
 	if err := u.postRepo.Delete(ctx, postID); err != nil {
+		u.log.Error().Err(err).Str("op", deletePostOp).Int64("post_id", postID).Int64("user_id", userID).Msg("Failed to delete post in repository")
 		return fmt.Errorf("ForumService - PostUsecase - Delete - postRepo.delete(): %w", err)
 	}
+
+	u.log.Info().Str("op", updatePostOp).Int64("post_id", postID).Msg("Post deleted successfully")
 	return nil
 }
 

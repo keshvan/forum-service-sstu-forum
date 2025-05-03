@@ -13,10 +13,10 @@ type Config struct {
 	PG_URL      string        `yaml:"pg_url"`
 	AccessTTL   time.Duration `yaml:"access_ttl"`
 	RefreshTTL  time.Duration `yaml:"refresh_ttl" env-required:"true"`
-	Log         string        `yaml:"log_level"`
 	Server      string        `yaml:"server"`
 	Secret      string        `yaml:"secret"`
 	GrpcAddress string        `yaml:"grpc_address"`
+	LogLevel    string        `yaml:"log_level"`
 }
 
 func NewConfig() (*Config, error) {

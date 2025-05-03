@@ -10,10 +10,12 @@ import (
 	postrequests "github.com/keshvan/forum-service-sstu-forum/internal/controller/request/post_requests"
 	"github.com/keshvan/forum-service-sstu-forum/internal/entity"
 	"github.com/keshvan/forum-service-sstu-forum/internal/usecase"
+	"github.com/rs/zerolog"
 )
 
 type PostHandler struct {
 	usecase usecase.PostUsecase
+	log     *zerolog.Logger
 }
 
 func (h *PostHandler) Create(c *gin.Context) {
@@ -23,7 +25,7 @@ func (h *PostHandler) Create(c *gin.Context) {
 		return
 	}
 
-	topicID, err := strconv.ParseInt(c.Param("topic_id"), 10, 64)
+	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
 		return
@@ -53,7 +55,7 @@ func (h *PostHandler) Create(c *gin.Context) {
 }
 
 func (h *PostHandler) GetByTopic(c *gin.Context) {
-	topicID, err := strconv.ParseInt(c.Param("topic_id"), 10, 64)
+	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid topic id"})
 		return
@@ -70,8 +72,6 @@ func (h *PostHandler) GetByTopic(c *gin.Context) {
 		return
 	}
 
-	// TODO: add gRPC call to get usernames
-
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
@@ -83,7 +83,7 @@ func (h *PostHandler) Update(c *gin.Context) {
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	postID, err := strconv.ParseInt(c.Param("post_id"), 10, 64)
+	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid post id"})
 		return
@@ -121,7 +121,7 @@ func (h *PostHandler) Delete(c *gin.Context) {
 	}
 	role, _ := middleware.GetRoleFromContext(c)
 
-	postID, err := strconv.ParseInt(c.Param("post_id"), 10, 64)
+	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid post id"})
 		return
