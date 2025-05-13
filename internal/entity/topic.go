@@ -1,17 +1,15 @@
 package entity
 
 import (
-	"database/sql"
 	"time"
 )
 
 type Topic struct {
-	ID            int64         `json:"id"`
-	CategoryID    int64         `json:"category_id"`
-	Title         string        `json:"title"`
-	AuthorID      *int64        `json:"author_id"`
-	Username      string        `json:"username"`
-	CreatedAt     time.Time     `json:"created_at"`
-	UpdatedAt     time.Time     `json:"updated_at"`
-	AuthorIDValid sql.NullInt64 `json:"-"`
+	ID         int64     `json:"id"`
+	CategoryID int64     `json:"category_id"`
+	Title      string    `json:"title"`
+	AuthorID   *int64    `json:"author_id"`
+	Username   string    `json:"username"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }

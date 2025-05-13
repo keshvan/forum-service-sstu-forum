@@ -21,7 +21,7 @@ type postUsecase struct {
 
 const (
 	createPostOp = "PostUsecase.Create"
-	getByTopicOp = "PostUsecase.GetAll"
+	getByTopicOp = "PostUsecase.GetByTopic"
 	deletePostOp = "PostUsecase.Delete"
 	updatePostOp = "PostUsecase.Update"
 )
@@ -115,6 +115,7 @@ func (u *postUsecase) Update(ctx context.Context, postID int64, userID int64, ro
 }
 
 func (u *postUsecase) Delete(ctx context.Context, postID int64, userID int64, role string) error {
+	fmt.Printf("USER_ID: %d ,  POST_ID: %d , ROLE: %s", userID, postID, role)
 	if err := u.checkAccess(ctx, postID, userID, role); err != nil {
 		u.log.Warn().Err(err).Str("op", deletePostOp).Int64("post_id", postID).Int64("user_id", userID).Msg("Access denied")
 		return err
@@ -149,7 +150,11 @@ func (u *postUsecase) checkAccess(ctx context.Context, postID int64, userID int6
 		return fmt.Errorf("ForumService - PostUsecase - checkAccess  - postRepo.GetByID(): %w", err)
 	}
 
-	if post.AuthorID == nil || (*post.AuthorID != userID || role != "admin") {
+	if role == "admin" {
+		return nil
+	}
+
+	if post.AuthorID == nil || (*post.AuthorID != userID) {
 		return fmt.Errorf("ForumService - PostUsecase - checkAccess  - postRepo.Update(): %w", ErrForbidden)
 	}
 

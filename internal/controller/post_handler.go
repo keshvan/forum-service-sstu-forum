@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -71,7 +72,7 @@ func (h *PostHandler) GetByTopic(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	fmt.Println("POSTS", posts)
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
@@ -141,4 +142,5 @@ func (h *PostHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"message": "post deleted"})
 }

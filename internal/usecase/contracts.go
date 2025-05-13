@@ -24,8 +24,14 @@ type (
 
 	TopicUsecase interface {
 		Create(context.Context, entity.Topic) (int64, error)
+		GetByID(ctx context.Context, id int64) (*entity.Topic, error)
 		GetByCategory(ct context.Context, categoryID int64) ([]entity.Topic, error)
 		Update(ctx context.Context, topicID int64, userID int64, role string, title string) error
 		Delete(ctx context.Context, topicID int64, userID int64, role string) error
+	}
+
+	ChatUsecase interface {
+		GetMessageHistory(ctx context.Context, limit int64) ([]entity.ChatMessage, error)
+		SaveMessage(ctx context.Context, userID int64, username string, content string) (*entity.ChatMessage, error)
 	}
 )

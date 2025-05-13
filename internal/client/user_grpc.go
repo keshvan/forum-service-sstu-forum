@@ -76,3 +76,21 @@ func (c *UserClient) GetUsernames(ctx context.Context, userIDs []int64) (map[int
 	c.log.Info().Str("op", "UserClient.GetUsernames").Msg("Successfully got usernames")
 	return res.GetUsernames(), nil
 }
+
+func (c *UserClient) GetUsername(ctx context.Context, userID int64) (string, error) {
+	req := &userpb.GetUsernameRequest{
+		UserId: userID,
+	}
+
+	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	res, err := c.client.GetUsername(callCtx, req)
+	if err != nil {
+		c.log.Error().Err(err).Str("op", "UserClient.GetUsername").Any("userID", userID).Msg("Failed to get username")
+		return "", fmt.Errorf("clients.user - GetUsername - c.client.GetUsername: %w", err)
+	}
+
+	c.log.Info().Str("op", "UserClient.GetUsername").Msg("Successfully got username")
+	return res.GetUsername(), nil
+}

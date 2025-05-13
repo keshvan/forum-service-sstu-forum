@@ -5,17 +5,20 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/keshvan/forum-service-sstu-forum/internal/chat"
+	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/controller/middleware"
 	"github.com/keshvan/forum-service-sstu-forum/internal/usecase"
 	"github.com/keshvan/go-common-forum/jwt"
 	"github.com/rs/zerolog"
 )
 
-func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT, log *zerolog.Logger) {
+func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT, log *zerolog.Logger, hub *chat.Hub, chatUsecase usecase.ChatUsecase, userClient *client.UserClient) {
 	categoryHandler := &CategoryHandler{categoryUsecase, log}
 	topicHandler := &TopicHandler{topicUsecase, log}
 	postHandler := &PostHandler{postUsecase, log}
 	auth := middleware.NewAuthMiddleware(jwt)
+	chatHandler := NewChatHandler(hub, chatUsecase, userClient, log)
 
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
@@ -24,6 +27,8 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	engine.GET("/ws", auth.ChatAuth(), chatHandler.ServeWs)
 
 	categories := engine.Group("/categories")
 	{
@@ -42,6 +47,7 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 	engine.GET("/categories/:id/topics", topicHandler.GetByCategory)
 	engine.POST("/categories/:id/topics", auth.Auth(), topicHandler.Create)
 
+	engine.GET("/topics/:id", topicHandler.GetByID)
 	topics := engine.Group("/topics").Use(auth.Auth())
 	{
 		topics.DELETE("/:id", topicHandler.Delete)
@@ -54,6 +60,6 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 	posts := engine.Group("/posts").Use(auth.Auth())
 	{
 		posts.DELETE("/:id", postHandler.Delete)
-		posts.PATCH("/:id", postHandler.Delete)
+		posts.PATCH("/:id", postHandler.Update)
 	}
 }

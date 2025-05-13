@@ -24,6 +24,7 @@ const (
 	getByCategoryOp = "TopicUsecase.GetAll"
 	deleteTopicOp   = "TopicUsecase.Delete"
 	updateTopicOp   = "TopicUsecase.Update"
+	getByIdTopicOp  = "TopicUsecase.GetByID"
 )
 
 func NewTopicUsecase(topicRepo repo.TopicRepository, categoryRepo repo.CategoryRepository, userClient *client.UserClient, log *zerolog.Logger) TopicUsecase {
@@ -44,6 +45,31 @@ func (u *topicUsecase) Create(ctx context.Context, topic entity.Topic) (int64, e
 
 	u.log.Info().Str("op", createTopicOp).Any("topic", topic).Msg("Topic created successfully")
 	return id, nil
+}
+
+func (u *topicUsecase) GetByID(ctx context.Context, id int64) (*entity.Topic, error) {
+	topic, err := u.topicRepo.GetByID(ctx, id)
+	if err != nil {
+		u.log.Error().Err(err).Str("op", getByIdTopicOp).Int64("id", id).Msg("Failed to get topic in repository")
+		return nil, fmt.Errorf("ForumService - TopicUsecase - GetByID - repo.GetByID(): %w", err)
+	}
+
+	var username string
+
+	if topic.AuthorID == nil {
+		username = "Удаленный пользователь"
+	} else {
+		if uname, err := u.userClient.GetUsername(ctx, *topic.AuthorID); err != nil {
+			return nil, fmt.Errorf("ForumService - TopicUsecase - GetById - userClient.GetUsername(): %w", err)
+		} else {
+			username = uname
+		}
+	}
+
+	topic.Username = username
+
+	u.log.Info().Str("op", getByIdTopicOp).Int64("id", id).Msg("Topic taken successfully")
+	return topic, nil
 }
 
 func (u *topicUsecase) GetByCategory(ctx context.Context, categoryID int64) ([]entity.Topic, error) {

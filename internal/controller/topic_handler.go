@@ -23,6 +23,7 @@ const (
 	getByCategoryOp = "TopicHandler.GetByCategory"
 	deleteTopicOp   = "TopicHandler.Delete"
 	updateTopicOp   = "TopicHandler.Update"
+	getByIDTopicOP  = "TopicHandler.GetByID"
 )
 
 func (h *TopicHandler) Create(c *gin.Context) {
@@ -66,6 +67,27 @@ func (h *TopicHandler) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": id})
+}
+
+func (h *TopicHandler) GetByID(c *gin.Context) {
+	log := h.getRequestLogger(c).With().Str("op", getByIDTopicOP).Logger()
+
+	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to parse topic id")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid topic id"})
+		return
+	}
+
+	topic, err := h.usecase.GetByID(c.Request.Context(), topicID)
+	if err != nil {
+		log.Error().Err(err).Int64("topic_id", topicID).Msg("Failed to get topic")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get topic"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"topic": topic})
+
 }
 
 func (h *TopicHandler) GetByCategory(c *gin.Context) {

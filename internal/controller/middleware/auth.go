@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/keshvan/go-common-forum/jwt"
@@ -32,6 +34,7 @@ const (
 func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		fmt.Println("authHeader", authHeader)
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authorization header is required"})
 			return
@@ -47,6 +50,30 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 		claims, err := m.jwt.ParseToken(token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+
+		var accessClaims AccessClaims
+		mapstructure.Decode(claims, &accessClaims)
+		fmt.Println(time.Now().Unix(), accessClaims.Exp)
+		c.Set(ContextUserIDKey, accessClaims.UserID)
+		c.Set(ContextRoleKey, accessClaims.Role)
+
+		c.Next()
+	}
+}
+
+func (m *AuthMiddleware) ChatAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Query("token")
+		if token == "" {
+			c.Next()
+			return
+		}
+
+		claims, err := m.jwt.ParseToken(token)
+		if err != nil {
+			c.Next()
 			return
 		}
 

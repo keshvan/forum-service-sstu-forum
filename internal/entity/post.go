@@ -1,19 +1,16 @@
 package entity
 
 import (
-	"database/sql"
 	"time"
 )
 
 type Post struct {
-	ID            int64         `json:"id"`
-	TopicID       int64         `json:"topic_id"`
-	AuthorID      *int64        `json:"author_id"`
-	Username      string        `json:"username"`
-	Content       string        `json:"content"`
-	ReplyTo       *int64        `json:"reply_to"`
-	CreatedAt     time.Time     `json:"created_at"`
-	UpdatedAt     time.Time     `json:"updated_at"`
-	ReplyToValid  sql.NullInt64 `json:"-"`
-	AuthorIDValid sql.NullInt64 `json:"-"`
+	ID        int64     `json:"id"`
+	TopicID   int64     `json:"topic_id"`
+	AuthorID  *int64    `json:"author_id"`
+	Username  string    `json:"username"`
+	Content   string    `json:"content"`
+	ReplyTo   *int64    `json:"reply_to"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

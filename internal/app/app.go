@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/keshvan/forum-service-sstu-forum/config"
+	"github.com/keshvan/forum-service-sstu-forum/internal/chat"
 	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/controller"
 	"github.com/keshvan/forum-service-sstu-forum/internal/repo"
@@ -32,6 +33,7 @@ func Run(cfg *config.Config) {
 	categoryRepo := repo.NewCategoryRepository(pg, logger)
 	topicRepo := repo.NewTopicRepository(pg, logger)
 	postRepo := repo.NewPostRepository(pg, logger)
+	chatRepo := repo.NewChatRepository(pg, logger)
 
 	//CLient
 	userClient, err := client.New(cfg.GrpcAddress, logger)
@@ -48,11 +50,16 @@ func Run(cfg *config.Config) {
 	//JWT
 	jwt := jwt.New(cfg.Secret, cfg.AccessTTL, cfg.RefreshTTL)
 
+	//Chat
+	hub := chat.NewHub(logger)
+	go hub.Run()
+	chatUsecase := usecase.NewChatUsecase(chatRepo, logger)
+
 	//HTTP-Server
 	httpServer := httpserver.New(cfg.Server)
-	controller.SetRoutes(httpServer.Engine, categoryUsecase, topicUsecase, postUsecase, jwt, logger)
-
+	controller.SetRoutes(httpServer.Engine, categoryUsecase, topicUsecase, postUsecase, jwt, logger, hub, chatUsecase, userClient)
 	httpServer.Run()
+
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 	<-interrupt

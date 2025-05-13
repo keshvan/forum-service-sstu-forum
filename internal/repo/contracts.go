@@ -30,4 +30,9 @@ type (
 		Update(ctx context.Context, id int64, content string) error
 		Delete(ctx context.Context, id int64) error
 	}
+
+	ChatRepository interface {
+		SaveMessage(ctx context.Context, message *entity.ChatMessage) (int64, error)
+		GetMessages(ctx context.Context, limit int64) ([]entity.ChatMessage, error)
+	}
 )

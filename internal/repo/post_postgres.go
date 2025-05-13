@@ -42,17 +42,16 @@ func (r *postRepository) GetByID(ctx context.Context, id int64) (*entity.Post, e
 	row := r.pg.Pool.QueryRow(ctx, "SELECT id, content, author_id, reply_to, created_at, updated_at FROM posts WHERE id = $1", id)
 
 	var p entity.Post
-	if err := row.Scan(&p.ID, &p.Content, &p.AuthorIDValid, &p.ReplyToValid, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := row.Scan(&p.ID, &p.Content, &p.AuthorID, &p.ReplyTo, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		r.log.Error().Err(err).Str("op", getByIdPostOp).Int64("id", id).Msg("Failed to get post")
 		return nil, fmt.Errorf("PostRepository - GetByID - row.Scan(): %w", err)
 	}
 
-	preparePost(&p)
 	return &p, nil
 }
 
 func (r *postRepository) GetByTopic(ctx context.Context, topicID int64) ([]entity.Post, error) {
-	rows, err := r.pg.Pool.Query(ctx, "SELECT id, content, author_id, reply_to, created_at, updated_at FROM posts WHERE topic_id = $1 ORDER BY created_at", topicID)
+	rows, err := r.pg.Pool.Query(ctx, "SELECT id, topic_id, content, author_id, reply_to, created_at, updated_at FROM posts WHERE topic_id = $1 ORDER BY created_at", topicID)
 	if err != nil {
 		r.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Failed to get posts")
 		return nil, fmt.Errorf("PostRepository - GetByTopic - pg.Pool.Query: %w", err)
@@ -62,12 +61,11 @@ func (r *postRepository) GetByTopic(ctx context.Context, topicID int64) ([]entit
 	var posts []entity.Post
 	var p entity.Post
 	for rows.Next() {
-		err := rows.Scan(&p.ID, &p.Content, &p.AuthorIDValid, &p.ReplyToValid, &p.CreatedAt, &p.UpdatedAt)
+		err := rows.Scan(&p.ID, &p.TopicID, &p.Content, &p.AuthorID, &p.ReplyTo, &p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
 			r.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Failed to scan post")
 			return nil, fmt.Errorf("PostRepository - GetPostsByTopic - rows.Next(): %w", err)
 		}
-		preparePost(&p)
 		posts = append(posts, p)
 	}
 
@@ -87,18 +85,4 @@ func (r *postRepository) Delete(ctx context.Context, id int64) error {
 		return fmt.Errorf("PostRepository - Delete - pg.Pool.Exec(): %w", err)
 	}
 	return nil
-}
-
-func preparePost(post *entity.Post) {
-	if post.AuthorIDValid.Valid {
-		post.AuthorID = &post.AuthorIDValid.Int64
-	} else {
-		post.AuthorID = nil
-	}
-
-	if post.ReplyToValid.Valid {
-		post.ReplyTo = &post.ReplyToValid.Int64
-	} else {
-		post.ReplyTo = nil
-	}
 }

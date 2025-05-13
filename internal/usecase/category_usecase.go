@@ -40,7 +40,7 @@ func (u *categoryUsecase) GetByID(ctx context.Context, id int64) (*entity.Catego
 	category, err := u.repo.GetByID(ctx, id)
 	if err != nil {
 		u.log.Error().Err(err).Str("op", getByIdOp).Int64("id", id).Msg("Failed to get category in repository")
-		return nil, fmt.Errorf("ForumService - CategoryUsecase - GetBuID - repo.GetByID(): %w", err)
+		return nil, fmt.Errorf("ForumService - CategoryUsecase - GetByID - repo.GetByID(): %w", err)
 	}
 
 	u.log.Info().Str("op", getByIdOp).Int64("id", id).Msg("Category taken successfully")

@@ -20,6 +20,7 @@ const (
 	getByCategoryOp = "TopicRepository.GetAll"
 	deleteTopicOp   = "TopicRepository.Delete"
 	updateTopicOp   = "TopicRepository.Update"
+	countTopicOp    = "TopicRepository.CountByCategory"
 )
 
 func NewTopicRepository(pg *postgres.Postgres, log *zerolog.Logger) TopicRepository {
@@ -41,12 +42,11 @@ func (r *topicRepository) GetByID(ctx context.Context, id int64) (*entity.Topic,
 	row := r.pg.Pool.QueryRow(ctx, "SELECT id, category_id, title, author_id, created_at, updated_at FROM topics WHERE id = $1", id)
 
 	var t entity.Topic
-	if err := row.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorIDValid, &t.CreatedAt, &t.UpdatedAt); err != nil {
+	if err := row.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt); err != nil {
 		r.log.Error().Err(err).Str("op", getByIdTopicOp).Int64("id", id).Msg("Failed to get topic")
 		return nil, fmt.Errorf("TopicRepository - GetTopicByID - row.Scan(): %w", err)
 	}
 
-	prepareTopic(&t)
 	return &t, nil
 }
 
@@ -61,12 +61,11 @@ func (r *topicRepository) GetByCategory(ctx context.Context, categoryID int64) (
 	var topics []entity.Topic
 	var t entity.Topic
 	for rows.Next() {
-		err := rows.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorIDValid, &t.CreatedAt, &t.UpdatedAt)
+		err := rows.Scan(&t.ID, &t.CategoryID, &t.Title, &t.AuthorID, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			r.log.Error().Err(err).Str("op", getByCategoryOp).Int64("category_id", categoryID).Msg("Failed to scan topic")
 			return nil, fmt.Errorf("TopicRepository - GetTopics - rows.Next() - rows.Scan(): %w", err)
 		}
-		prepareTopic(&t)
 		topics = append(topics, t)
 	}
 
@@ -87,12 +86,4 @@ func (r *topicRepository) Delete(ctx context.Context, id int64) error {
 		return fmt.Errorf("TopicRepository - Delete - pg.Pool.Exec(): %w", err)
 	}
 	return nil
-}
-
-func prepareTopic(topic *entity.Topic) {
-	if topic.AuthorIDValid.Valid {
-		topic.AuthorID = &topic.AuthorIDValid.Int64
-		return
-	}
-	topic.AuthorID = nil
 }
