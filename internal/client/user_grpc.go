@@ -11,13 +11,19 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type UserClient struct {
+type UserClient interface {
+	GetUsernames(ctx context.Context, userIDs []int64) (map[int64]string, error)
+	GetUsername(ctx context.Context, userID int64) (string, error)
+	Close() error
+}
+
+type userClient struct {
 	client userpb.UserServiceClient
 	conn   *grpc.ClientConn
 	log    *zerolog.Logger
 }
 
-func New(address string, log *zerolog.Logger) (*UserClient, error) {
+func New(address string, log *zerolog.Logger) (UserClient, error) {
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		return nil, err
@@ -40,21 +46,21 @@ func New(address string, log *zerolog.Logger) (*UserClient, error) {
 		return nil, fmt.Errorf("client.UserClient - New - connection warmup failed: %w", err)
 	}
 
-	return &UserClient{
+	return &userClient{
 		client: c,
 		conn:   conn,
 		log:    log,
 	}, nil
 }
 
-func (c *UserClient) Close() error {
+func (c *userClient) Close() error {
 	if c.conn != nil {
 		return c.conn.Close()
 	}
 	return nil
 }
 
-func (c *UserClient) GetUsernames(ctx context.Context, userIDs []int64) (map[int64]string, error) {
+func (c *userClient) GetUsernames(ctx context.Context, userIDs []int64) (map[int64]string, error) {
 	if len(userIDs) == 0 {
 		c.log.Warn().Str("op", "UserClient.GetUsernames").Msg("Empty userIDs")
 		return make(map[int64]string), nil
@@ -77,7 +83,7 @@ func (c *UserClient) GetUsernames(ctx context.Context, userIDs []int64) (map[int
 	return res.GetUsernames(), nil
 }
 
-func (c *UserClient) GetUsername(ctx context.Context, userID int64) (string, error) {
+func (c *userClient) GetUsername(ctx context.Context, userID int64) (string, error) {
 	req := &userpb.GetUsernameRequest{
 		UserId: userID,
 	}

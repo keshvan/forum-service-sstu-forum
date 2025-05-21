@@ -26,6 +26,21 @@ const (
 	getByIDTopicOP  = "TopicHandler.GetByID"
 )
 
+// Create godoc
+// @Summary Create a new topic
+// @Description Creates a new topic in a category. Requires authentication.
+// @Tags topics
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID to create topic in" Format(int64)
+// @Param topic body entity.Topic true "Topic data to create. ID, AuthorID, CategoryID, CreatedAt, UpdatedAt will be ignored or overridden."
+// @Success 200 {object} response.IDResponse "Topic created successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid category ID or request payload"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not authorized or trying to impersonate)"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /categories/{id}/topics [post]
 func (h *TopicHandler) Create(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", createTopicOp).Logger()
 
@@ -69,6 +84,16 @@ func (h *TopicHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
+// GetByID godoc
+// @Summary Get a topic by ID
+// @Description Retrieves a specific topic by its ID.
+// @Tags topics
+// @Produce json
+// @Param id path int true "Topic ID" Format(int64)
+// @Success 200 {object} response.TopicResponse "Successfully retrieved topic"
+// @Failure 400 {object} response.ErrorResponse "Invalid topic ID"
+// @Failure 500 {object} response.ErrorResponse "Failed to get topic"
+// @Router /topics/{id} [get]
 func (h *TopicHandler) GetByID(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", getByIDTopicOP).Logger()
 
@@ -90,6 +115,17 @@ func (h *TopicHandler) GetByID(c *gin.Context) {
 
 }
 
+// GetByCategory godoc
+// @Summary Get topics by category ID
+// @Description Retrieves a list of topics for a category ID.
+// @Tags topics
+// @Produce json
+// @Param id path int true "Category ID" Format(int64)
+// @Success 200 {object} response.TopicsResponse "Successfully retrieved topics"
+// @Failure 400 {object} response.ErrorResponse "Invalid category ID"
+// @Failure 404 {object} response.ErrorResponse "Category not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Router /categories/{id}/topics [get]
 func (h *TopicHandler) GetByCategory(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", getByCategoryOp).Logger()
 
@@ -116,6 +152,22 @@ func (h *TopicHandler) GetByCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"topics": topics})
 }
 
+// Update godoc
+// @Summary Update a topic
+// @Description Updates a topic. Requires authentication and ownership or admin role.
+// @Tags topics
+// @Accept json
+// @Produce json
+// @Param id path int true "Topic ID" Format(int64)
+// @Param topic_update body topicrequests.UpdateRequest true "Topic update data (only title)"
+// @Success 200 {object} response.SuccessMessageResponse "Topic updated successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid topic ID or request payload"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an owner or admin)"
+// @Failure 404 {object} response.ErrorResponse "Topic not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /topics/{id} [patch]
 func (h *TopicHandler) Update(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", updateTopicOp).Logger()
 
@@ -160,6 +212,19 @@ func (h *TopicHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "post updated"})
 }
 
+// Delete godoc
+// @Summary Delete a topic
+// @Description Deletes a topic by its ID. Requires authentication and ownership or role.
+// @Tags topics
+// @Param id path int true "Topic ID" Format(int64)
+// @Success 200 {object} response.SuccessMessageResponse "Topic deleted successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid topic ID"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an owner or admin)"
+// @Failure 404 {object} response.ErrorResponse "Topic not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /topics/{id} [delete]
 func (h *TopicHandler) Delete(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", deleteTopicOp).Logger()
 	userID, exists := middleware.GetUserIDFromContext(c)

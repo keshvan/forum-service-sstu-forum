@@ -31,14 +31,7 @@ func (r *chatRepository) SaveMessage(ctx context.Context, message *entity.ChatMe
 }
 
 func (r *chatRepository) GetMessages(ctx context.Context, limit int64) ([]entity.ChatMessage, error) {
-	rows, err := r.pg.Pool.Query(ctx, `SELECT id, user_id, username, content, created_at
-									   FROM (
-									 		SELECT id, user_id, username, content, created_at
-											FROM messages
-											ORDER BY created_at DESC
-											LIMIT $1
-									   ) AS recent_mesages
-									   ORDER BY created_at ASC`, limit)
+	rows, err := r.pg.Pool.Query(ctx, "SELECT id, user_id, username, content, created_at FROM (SELECT id, user_id, username, content, created_at FROM messages ORDER BY created_at DESC LIMIT $1) AS recent_mesages ORDER BY created_at ASC", limit)
 	if err != nil {
 		r.log.Error().Err(err).Str("op", "ChatRepository.GetMessages").Msg("Failed to get messages")
 		return nil, fmt.Errorf("ChatRepository - GetMessages - r.pg.Pool.Query(): %w", err)

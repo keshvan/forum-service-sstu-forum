@@ -64,7 +64,7 @@ func (r *postRepository) GetByTopic(ctx context.Context, topicID int64) ([]entit
 		err := rows.Scan(&p.ID, &p.TopicID, &p.Content, &p.AuthorID, &p.ReplyTo, &p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
 			r.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Failed to scan post")
-			return nil, fmt.Errorf("PostRepository - GetPostsByTopic - rows.Next(): %w", err)
+			return nil, fmt.Errorf("PostRepository - GetByTopic - rows.Next() - rows.Scan(): %w", err)
 		}
 		posts = append(posts, p)
 	}

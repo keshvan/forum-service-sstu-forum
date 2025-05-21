@@ -5,15 +5,18 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	_ "github.com/keshvan/forum-service-sstu-forum/docs"
 	"github.com/keshvan/forum-service-sstu-forum/internal/chat"
 	"github.com/keshvan/forum-service-sstu-forum/internal/client"
 	"github.com/keshvan/forum-service-sstu-forum/internal/controller/middleware"
 	"github.com/keshvan/forum-service-sstu-forum/internal/usecase"
 	"github.com/keshvan/go-common-forum/jwt"
 	"github.com/rs/zerolog"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT, log *zerolog.Logger, hub *chat.Hub, chatUsecase usecase.ChatUsecase, userClient *client.UserClient) {
+func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topicUsecase usecase.TopicUsecase, postUsecase usecase.PostUsecase, jwt *jwt.JWT, log *zerolog.Logger, hub *chat.Hub, chatUsecase usecase.ChatUsecase, userClient client.UserClient) {
 	categoryHandler := &CategoryHandler{categoryUsecase, log}
 	topicHandler := &TopicHandler{topicUsecase, log}
 	postHandler := &PostHandler{postUsecase, log}
@@ -62,4 +65,6 @@ func SetRoutes(engine *gin.Engine, categoryUsecase usecase.CategoryUsecase, topi
 		posts.DELETE("/:id", postHandler.Delete)
 		posts.PATCH("/:id", postHandler.Update)
 	}
+
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }

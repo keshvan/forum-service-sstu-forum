@@ -32,7 +32,7 @@ func (r *categoryRepository) Create(ctx context.Context, category entity.Categor
 	var id int64
 	if err := row.Scan(&id); err != nil {
 		r.log.Error().Err(err).Str("op", createOp).Any("category", category).Msg("Failed to insert category")
-		return 0, fmt.Errorf("CategoryRepository -  CreateCategory - row.Scan(): %w", err)
+		return 0, fmt.Errorf("CategoryRepository - Create - row.Scan(): %w", err)
 	}
 
 	return id, nil
@@ -44,7 +44,7 @@ func (r *categoryRepository) GetByID(ctx context.Context, id int64) (*entity.Cat
 	var c entity.Category
 	if err := row.Scan(&c.ID, &c.Title, &c.Description, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		r.log.Error().Err(err).Str("op", getByIdOp).Int64("id", id).Msg("Failed to get category")
-		return nil, fmt.Errorf("PostRepository - GetByID - row.Scan(): %w", err)
+		return nil, fmt.Errorf("CategoryRepository - GetByID - row.Scan(): %w", err)
 	}
 
 	return &c, nil
@@ -54,7 +54,7 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]entity.Category, err
 	rows, err := r.pg.Pool.Query(ctx, "SELECT id, title, description, created_at, updated_at FROM categories ORDER BY id")
 	if err != nil {
 		r.log.Error().Err(err).Str("op", getAllOp).Msg("Failed to get categories")
-		return nil, fmt.Errorf("CategoryRepository -  GetCategories - pg.Pool.Query: %w", err)
+		return nil, fmt.Errorf("CategoryRepository - GetCategories - pg.Pool.Query: %w", err)
 	}
 	defer rows.Close()
 

@@ -24,6 +24,20 @@ const (
 	updateOp   = "CategoryHandler.Update"
 )
 
+// Create godoc
+// @Summary Create a new category
+// @Description Creates a new category. Requires admin role.
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param category body entity.Category true "Category data to create. ID, CreatedAt, UpdatedAt will be ignored."
+// @Success 201 {object} response.IDResponse "Category created successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid request payload"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an admin)"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /categories [post]
 func (h *CategoryHandler) Create(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", createOp).Logger()
 
@@ -44,6 +58,16 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
+// GetByID godoc
+// @Summary Get a category by ID
+// @Description Retrieves a specific category by its ID.
+// @Tags categories
+// @Produce json
+// @Param id path int true "Category ID" Format(int64)
+// @Success 200 {object} response.CategoryResponse "Successfully retrieved category"
+// @Failure 400 {object} response.ErrorResponse "Invalid category ID"
+// @Failure 500 {object} response.ErrorResponse "Failed to get category"
+// @Router /categories/{id} [get]
 func (h *CategoryHandler) GetByID(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", getTitleOp).Logger()
 
@@ -65,6 +89,14 @@ func (h *CategoryHandler) GetByID(c *gin.Context) {
 
 }
 
+// GetAll godoc
+// @Summary Get all categories
+// @Description Retrieves a list of all categories.
+// @Tags categories
+// @Produce json
+// @Success 200 {object} response.CategoriesResponse "Successfully retrieved all categories"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Router /categories [get]
 func (h *CategoryHandler) GetAll(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", getAllOp).Logger()
 
@@ -72,11 +104,24 @@ func (h *CategoryHandler) GetAll(c *gin.Context) {
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get all categories")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"categories": posts})
 }
 
+// Delete godoc
+// @Summary Delete a category
+// @Description Deletes a category by its ID. Requires admin privileges.
+// @Tags categories
+// @Param id path int true "Category ID" Format(int64)
+// @Success 200 "Category deleted successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid category ID"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an admin)"
+// @Failure 500 {object} response.ErrorResponse "Failed to delete category"
+// @Security ApiKeyAuth
+// @Router /categories/{id} [delete]
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", deleteOp).Logger()
 
@@ -96,6 +141,21 @@ func (h *CategoryHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// Update godoc
+// @Summary Update a category
+// @Description Updates a category's title and/or description by its ID. Requires admin privileges.
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID" Format(int64)
+// @Param category_update body categoryrequests.UpdateRequest true "Category update data"
+// @Success 200 "Category updated successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid category ID or request payload"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an admin)"
+// @Failure 500 {object} response.ErrorResponse "Failed to update category"
+// @Security ApiKeyAuth
+// @Router /categories/{id} [patch]
 func (h *CategoryHandler) Update(c *gin.Context) {
 	log := h.getRequestLogger(c).With().Str("op", updateOp).Logger()
 

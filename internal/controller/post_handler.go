@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,6 +18,21 @@ type PostHandler struct {
 	log     *zerolog.Logger
 }
 
+// Create godoc
+// @Summary Create a new post in a topic
+// @Description Creates a new post in atopic. Requires authentication.
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param id path int true "Topic ID to create post in" Format(int64)
+// @Param post body entity.Post true "Post data to create. ID, TopicID, AuthorID, Username, CreatedAt, UpdatedAt will be ignored or overridden."
+// @Success 200 {object} response.IDResponse "Post created successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid topic ID or request payload, or topic not found"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not authorized)"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /topics/{id}/posts [post]
 func (h *PostHandler) Create(c *gin.Context) {
 	userID, exists := middleware.GetUserIDFromContext(c)
 	if !exists {
@@ -55,6 +69,17 @@ func (h *PostHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
+// GetByTopic godoc
+// @Summary Get posts by topic ID
+// @Description Retrieves a list of posts for a topic ID.
+// @Tags posts
+// @Produce json
+// @Param id path int true "Topic ID" Format(int64)
+// @Success 200 {object} response.PostsResponse "Successfully retrieved posts"
+// @Failure 400 {object} response.ErrorResponse "Invalid topic ID"
+// @Failure 404 {object} response.ErrorResponse "Topic not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Router /topics/{id}/posts [get]
 func (h *PostHandler) GetByTopic(c *gin.Context) {
 	topicID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -72,10 +97,25 @@ func (h *PostHandler) GetByTopic(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("POSTS", posts)
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
+// Update godoc
+// @Summary Update a post
+// @Description Updates a post. Requires authentication and ownership or admin role.
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param id path int true "Post ID" Format(int64)
+// @Param post_update body postrequests.UpdateRequest true "Post update data (only content)"
+// @Success 200 {object} response.SuccessMessageResponse "Post updated successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid post ID or request payload"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an owner or admin)"
+// @Failure 404 {object} response.ErrorResponse "Post not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /posts/{id} [patch]
 func (h *PostHandler) Update(c *gin.Context) {
 	userID, exists := middleware.GetUserIDFromContext(c)
 	if !exists {
@@ -114,6 +154,19 @@ func (h *PostHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "post updated"})
 }
 
+// Delete godoc
+// @Summary Delete a post
+// @Description Deletes a post by its ID. Requires authentication and ownership or admin role.
+// @Tags posts
+// @Param id path int true "Post ID" Format(int64)
+// @Success 200 {object} response.SuccessMessageResponse "Post deleted successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid post ID"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized (token is missing or invalid)"
+// @Failure 403 {object} response.ErrorResponse "Forbidden (user is not an owner or admin)"
+// @Failure 404 {object} response.ErrorResponse "Post not found"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /posts/{id} [delete]
 func (h *PostHandler) Delete(c *gin.Context) {
 	userID, exists := middleware.GetUserIDFromContext(c)
 	if !exists {

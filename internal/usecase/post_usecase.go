@@ -15,7 +15,7 @@ import (
 type postUsecase struct {
 	postRepo   repo.PostRepository
 	topicRepo  repo.TopicRepository
-	userClient *client.UserClient
+	userClient client.UserClient
 	log        *zerolog.Logger
 }
 
@@ -26,7 +26,7 @@ const (
 	updatePostOp = "PostUsecase.Update"
 )
 
-func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository, userClient *client.UserClient, log *zerolog.Logger) PostUsecase {
+func NewPostUsecase(postRepo repo.PostRepository, topicRepo repo.TopicRepository, userClient client.UserClient, log *zerolog.Logger) PostUsecase {
 	return &postUsecase{postRepo: postRepo, topicRepo: topicRepo, userClient: userClient, log: log}
 }
 
@@ -59,14 +59,17 @@ func (u *postUsecase) Create(ctx context.Context, post entity.Post) (int64, erro
 }*/
 
 func (u *postUsecase) GetByTopic(ctx context.Context, topicID int64) ([]entity.Post, error) {
-	u.checkTopic(ctx, topicID)
+	if err := u.checkTopic(ctx, topicID); err != nil {
+		u.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Topic not found")
+		return nil, err
+	}
 	posts, err := u.postRepo.GetByTopic(ctx, topicID)
 	if err != nil {
 		u.log.Error().Err(err).Str("op", getByTopicOp).Int64("topic_id", topicID).Msg("Failed to get posts")
 		return nil, fmt.Errorf("ForumService - PostUsecase - GetByTopic - postRepo.GetByTopic(): %w", err)
 	}
 
-	authorIDs := make([]int64, len(posts))
+	var authorIDs []int64
 	authorIDSet := make(map[int64]bool)
 	for i := range posts {
 		if posts[i].AuthorID != nil {

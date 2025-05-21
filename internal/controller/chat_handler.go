@@ -24,11 +24,11 @@ var upgrader = websocket.Upgrader{
 type ChatHandler struct {
 	hub         *chat.Hub
 	chatUsecase usecase.ChatUsecase
-	userClient  *client.UserClient
+	userClient  client.UserClient
 	log         *zerolog.Logger
 }
 
-func NewChatHandler(hub *chat.Hub, chatUsecase usecase.ChatUsecase, userClient *client.UserClient, log *zerolog.Logger) *ChatHandler {
+func NewChatHandler(hub *chat.Hub, chatUsecase usecase.ChatUsecase, userClient client.UserClient, log *zerolog.Logger) *ChatHandler {
 	return &ChatHandler{hub: hub, chatUsecase: chatUsecase, userClient: userClient, log: log}
 }
 
@@ -51,6 +51,7 @@ func (h *ChatHandler) ServeWs(c *gin.Context) {
 	username, err := h.userClient.GetUsername(c.Request.Context(), userID)
 	if err != nil {
 		h.log.Error().Err(err).Str("op", "ChatHandler.ServeWs").Msg("Failed to get username")
+		conn.Close()
 		return
 	}
 

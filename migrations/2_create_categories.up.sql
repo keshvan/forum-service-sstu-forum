@@ -1,4 +1,4 @@
-CREATE TABLE categories IF NOT EXISTS (
+CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT,

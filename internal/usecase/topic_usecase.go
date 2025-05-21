@@ -15,7 +15,7 @@ import (
 type topicUsecase struct {
 	topicRepo    repo.TopicRepository
 	categoryRepo repo.CategoryRepository
-	userClient   *client.UserClient
+	userClient   client.UserClient
 	log          *zerolog.Logger
 }
 
@@ -27,7 +27,7 @@ const (
 	getByIdTopicOp  = "TopicUsecase.GetByID"
 )
 
-func NewTopicUsecase(topicRepo repo.TopicRepository, categoryRepo repo.CategoryRepository, userClient *client.UserClient, log *zerolog.Logger) TopicUsecase {
+func NewTopicUsecase(topicRepo repo.TopicRepository, categoryRepo repo.CategoryRepository, userClient client.UserClient, log *zerolog.Logger) TopicUsecase {
 	return &topicUsecase{topicRepo: topicRepo, categoryRepo: categoryRepo, userClient: userClient, log: log}
 }
 
@@ -84,7 +84,7 @@ func (u *topicUsecase) GetByCategory(ctx context.Context, categoryID int64) ([]e
 		return nil, fmt.Errorf("ForumService - TopicUsecase  - GetByCategory - topicRepo.GetByCategory(): %w", err)
 	}
 
-	authorIDs := make([]int64, len(topics))
+	var authorIDs []int64
 	authorIDSet := make(map[int64]bool)
 	for i := range topics {
 		if topics[i].AuthorID != nil {
@@ -156,7 +156,11 @@ func (u *topicUsecase) checkAccess(ctx context.Context, topicID int64, userID in
 		return fmt.Errorf("ForumService - TopicUsecase - checkAccess  - topicRepo.GetByID(): %w", err)
 	}
 
-	if post.AuthorID == nil || (*post.AuthorID != userID || role != "admin") {
+	if role == "admin" {
+		return nil
+	}
+
+	if post.AuthorID == nil || (*post.AuthorID != userID) {
 		return fmt.Errorf("ForumService - TopicUsecase - checkAccess  - topicRepo.Update(): %w", ErrForbidden)
 	}
 
